@@ -36,8 +36,48 @@ const BACK_LEFT_FACE = 5;
 // point of view). The bottom face mirrors the top face: top-left to bottom-right, then bottom-left to top-right (still
 // from the player's perspective).
 
+const TOP_LEFT_ARROW_X = 0.32 * X_RES;
+const TOP_RIGHT_ARROW_X = X_RES - TOP_LEFT_ARROW_X;
+const TOP_ARROWS_Y = 0.13 * Y_RES;
+
+const LEFT_ARROW_X = 0.15 * X_RES;
+const RIGHT_ARROW_X = X_RES - LEFT_ARROW_X;
+const SIDE_ARROWS_Y = 0.5 * Y_RES;
+
+const BOTTOM_LEFT_ARROW_X = TOP_LEFT_ARROW_X;
+const BOTTOM_RIGHT_ARROW_X = X_RES - TOP_LEFT_ARROW_X;
+const BOTTOM_ARROWS_Y = Y_RES - TOP_ARROWS_Y;
+
+class Button {
+	field image;
+	field x;
+	field y;
+
+	constructor(image, x, y, origin) {
+		this.image = image;
+		this.x = x - origin[0] * image.width;
+		this.y = y - origin[1] * image.height;
+	}
+
+	function isClicked(inputManager) {
+		return inputManager.didMouseClickHere(this.x, this.y, this.image.width, this.image.height);
+	}
+
+	function draw() {
+		this.image.draw(this.x, this.y);
+	}
+}
+
 class MainScene : AbstractScene {
 	field faces;
+
+	field topLeftArrow = new Button(Images.get("top-left-arrow.png"), TOP_LEFT_ARROW_X, TOP_ARROWS_Y, [0.5, 0.5]);
+	field topRightArrow = new Button(Images.get("top-right-arrow.png"), TOP_RIGHT_ARROW_X, TOP_ARROWS_Y, [0.5, 0.5]);
+	field leftArrow = new Button(Images.get("left-arrow.png"), LEFT_ARROW_X, SIDE_ARROWS_Y, [0.5, 0.5]);
+	field rightArrow = new Button(Images.get("right-arrow.png"), RIGHT_ARROW_X, SIDE_ARROWS_Y, [0.5, 0.5]);
+	field bottomLeftArrow = new Button(Images.get("bottom-left-arrow.png"), BOTTOM_LEFT_ARROW_X, BOTTOM_ARROWS_Y, [0.5, 0.5]);
+	field bottomRightArrow = new Button(Images.get("bottom-right-arrow.png"), BOTTOM_RIGHT_ARROW_X, BOTTOM_ARROWS_Y, [0.5, 0.5]);
+	field shuffleButton = new Button(Images.get("shuffle.png"), 0, Y_RES, [0.0, 1.0]);
 
 	static field colors =
 		[ [0, 155, 72]
@@ -50,7 +90,6 @@ class MainScene : AbstractScene {
 
 	constructor() {
 		this.reset();
-		this.shuffle();
 	}
 
 	function reset() {
@@ -67,57 +106,82 @@ class MainScene : AbstractScene {
 		for (i = 0; i < SHUFFLE_COUNT; ++i) {
 			switch (Random.randomInt(6)) {
 				case 0:
-					this.rotateTopLayer();
+					this.rotateTopLayerCW();
 					break;
 				case 1:
-					this.rotateFrontLeftLayer();
+					this.rotateFrontLeftLayerCW();
 					break;
 				case 2:
-					this.rotateFrontRightLayer();
+					this.rotateFrontRightLayerCW();
 					break;
 				case 3:
 					// Rotate bottom layer.
-					//this.rotateCubeForward();
-					this.rotateFrontLeftLayer();
+					this.rotateCubeTopRight();
+					this.rotateFrontLeftLayerCW();
 					break;
 				case 4:
 					// Rotate back-left layer.
-					//this.rotateCubeRight();
-					this.rotateFrontLeftLayer();
+					this.rotateCubeRight();
+					this.rotateFrontLeftLayerCW();
 					break;
 				default:
 					// Rotate back-right layer.
-					//this.rotateCubeLeft();
-					this.rotateFrontRightLayer();
+					this.rotateCubeLeft();
+					this.rotateFrontRightLayerCW();
 					break;
 			}
 		}
 	}
 
 	function update(inputManager, events) {
-		if (inputManager.isKeyPressedThisFrame(KeyboardKey.ESCAPE)) {
-			this.reset();
+		if (this.shuffleButton.isClicked(inputManager)) {
+			this.shuffle();
 		}
+		rotatedLayer = false;
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.Q)) {
-			this.rotateFrontLeftLayer();
+			this.rotateFrontLeftLayerCCW();
+			rotatedLayer = true;
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.A)) {
+			this.rotateFrontLeftLayerCW();
+			rotatedLayer = true;
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.W)) {
-			this.rotateTopLayer();
+			this.rotateTopLayerCW();
+			rotatedLayer = true;
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.S)) {
+			this.rotateTopLayerCCW();
+			rotatedLayer = true;
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.E)) {
-			this.rotateFrontRightLayer();
+			this.rotateFrontRightLayerCW();
+			rotatedLayer = true;
 		}
-		if (inputManager.isKeyPressedThisFrame(KeyboardKey.LEFT)) {
-			this.rotateCubeLeft();
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.D)) {
+			this.rotateFrontRightLayerCCW();
+			rotatedLayer = true;
 		}
-		if (inputManager.isKeyPressedThisFrame(KeyboardKey.RIGHT)) {
-			this.rotateCubeRight();
-		}
-		if (inputManager.isKeyPressedThisFrame(KeyboardKey.UP)) {
-			this.rotateCubeForward();
-		}
-		if (inputManager.isKeyPressedThisFrame(KeyboardKey.DOWN)) {
-			this.rotateCubeBackward();
+		// Because the buttons slightly overlap the cube, skip cube rotations if a cube click occurred.
+		if (!rotatedLayer) {
+			if (this.topLeftArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.U)) {
+				this.rotateCubeTopLeft();
+			}
+			if (this.bottomRightArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.M)) {
+				this.rotateCubeBottomRight();
+			}
+			if (this.topRightArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.I)) {
+				this.rotateCubeTopRight();
+			}
+			if (this.bottomLeftArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.N)) {
+				this.rotateCubeBottomLeft();
+			}
+			if (this.leftArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.J)) {
+				this.rotateCubeLeft();
+			}
+			if (this.rightArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.K)) {
+				this.rotateCubeRight();
+			}
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.SPACE)) {
 			sum = 0;
@@ -128,7 +192,6 @@ class MainScene : AbstractScene {
 					}
 				}
 			}
-			print(this.faces);
 			print("Checksum: " + sum);
 		}
 	}
@@ -160,7 +223,7 @@ class MainScene : AbstractScene {
 		face[1][0] = t;
 	}
 
-	function rotateTopLayer() {
+	function rotateTopLayerCW() {
 		this.rotateFaceOnly(TOP_FACE);
 		// First corner
 		t = this.faces[FRONT_LEFT_FACE][0][0];
@@ -182,7 +245,13 @@ class MainScene : AbstractScene {
 		this.faces[BACK_LEFT_FACE][2][0] = t;
 	}
 
-	function rotateFrontLeftLayer() {
+	function rotateTopLayerCCW() {
+		for (i = 0; i < 3; ++i) {
+			this.rotateTopLayerCW();
+		}
+	}
+
+	function rotateFrontLeftLayerCW() {
 		this.rotateFaceOnly(FRONT_LEFT_FACE);
 		// In this case, can just swap entire rows at a time.
 		t = this.faces[TOP_FACE][0].clone();
@@ -192,7 +261,13 @@ class MainScene : AbstractScene {
 		this.faces[FRONT_RIGHT_FACE][0] = t;
 	}
 
-	function rotateFrontRightLayer() {
+	function rotateFrontLeftLayerCCW() {
+		for (i = 0; i < 3; ++i) {
+			this.rotateFrontLeftLayerCW();
+		}
+	}
+
+	function rotateFrontRightLayerCW() {
 		this.rotateFaceOnly(FRONT_RIGHT_FACE);
 		// First corner
 		t = this.faces[TOP_FACE][0][2];
@@ -214,10 +289,18 @@ class MainScene : AbstractScene {
 		this.faces[BACK_RIGHT_FACE][0][2] = t;
 	}
 
+	function rotateFrontRightLayerCCW() {
+		for (i = 0; i < 3; ++i) {
+			this.rotateFrontRightLayerCW();
+		}
+	}
+
 	// Like a front-right layer CW rotate but for the whole cube.
-	function rotateCubeForward() {
+	function rotateCubeTopRight() {
 		this.rotateFaceOnly(FRONT_RIGHT_FACE);
-		this.rotateFaceOnly(BACK_LEFT_FACE);
+		for (i = 0; i < 3; ++i) {
+			this.rotateFaceOnly(BACK_LEFT_FACE);
+		}
 		// Swap faces clockwise and later rotate them to correct their orientation.
 		t = this.copyFace(TOP_FACE);
 		this.faces[TOP_FACE] = this.copyFace(FRONT_LEFT_FACE);
@@ -234,10 +317,10 @@ class MainScene : AbstractScene {
 		}
 	}
 
-	// Like a front-right layer CCW rotate but for the whole cube.
-	function rotateCubeBackward() {
+	// Like a back-left layer CW rotate but for the whole cube.
+	function rotateCubeBottomLeft() {
 		for (i = 0; i < 3; ++i) {
-			this.rotateCubeForward();
+			this.rotateCubeTopRight();
 		}
 	}
 
@@ -261,8 +344,42 @@ class MainScene : AbstractScene {
 		}
 	}
 
+	// Like a back-right layer CW rotate but for the whole cube.
+	function rotateCubeTopLeft() {
+		for (i = 0; i < 3; ++i) {
+			this.rotateFaceOnly(FRONT_LEFT_FACE);
+		}
+		this.rotateFaceOnly(BACK_RIGHT_FACE);
+		// Swap faces clockwise and later rotate them to correct their orientation.
+		t = this.copyFace(TOP_FACE);
+		this.faces[TOP_FACE] = this.copyFace(FRONT_RIGHT_FACE);
+		this.faces[FRONT_RIGHT_FACE] = this.copyFace(BOTTOM_FACE);
+		this.faces[BOTTOM_FACE] = this.copyFace(BACK_LEFT_FACE);
+		this.faces[BACK_LEFT_FACE] = t;
+		// The new back-left and front-right faces have been effectively rotated 180 degrees. Compensate.
+		for (i = 0; i < 2; ++i) {
+			this.rotateFaceOnly(BACK_LEFT_FACE);
+			this.rotateFaceOnly(FRONT_RIGHT_FACE);
+		}
+	}
+
+	// Like a front-left layer CCW rotate but for the whole cube.
+	function rotateCubeBottomRight() {
+		for (i = 0; i < 3; ++i) {
+			this.rotateCubeTopLeft();
+		}
+	}
+
 	function render() {
 		Graphics2D.Draw.fill(255, 255, 255);
+		// Buttons
+		this.topLeftArrow.draw();
+		this.topRightArrow.draw();
+		this.leftArrow.draw();
+		this.rightArrow.draw();
+		this.bottomLeftArrow.draw();
+		this.bottomRightArrow.draw();
+		this.shuffleButton.draw();
 		// Top
 		oTop = [LEFT_X, MID_TOP_Y];
 		uTop = [MID_X, TOP_Y];
@@ -281,6 +398,10 @@ class MainScene : AbstractScene {
 		vRight = [MID_X, BOTTOM_Y];
 		this.drawFace(FRONT_RIGHT_FACE, oRight, uRight, vRight);
 		this.drawGrid(oRight, uRight, vRight);
+	}
+
+	function drawCentered(image, x, y) {
+		image.draw(x - 0.5 * image.width, y - 0.5 * image.height);
 	}
 
 	function drawFace(face, o, u, v) {
