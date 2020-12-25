@@ -1,0 +1,108 @@
+import Audio;
+import Graphics2D;
+import Graphics2DText;
+import Math;
+import Random;
+import TwoCansAlpha4;
+
+const X_RES = $var["screen_width"];
+const Y_RES = $var["screen_height"];
+
+const MID_X = 0.5 * X_RES;
+const MID_Y = 0.5 * Y_RES;
+const RADIUS = 0.4 * Y_RES;
+
+const LEFT_X = MID_X - 0.86602540378 * RADIUS;
+const RIGHT_X = MID_X + 0.86602540378 * RADIUS;
+
+const TOP_Y = MID_Y - RADIUS;
+const MID_TOP_Y = MID_Y - 0.5 * RADIUS;
+const MID_BOTTOM_Y = MID_Y + 0.5 * RADIUS;
+const BOTTOM_Y = MID_Y + RADIUS;
+
+const SHADOW = 0.15;
+
+class MainScene : AbstractScene {
+	field faces;
+
+	static field colors =
+		[ [0, 155, 72]
+		, [185, 0, 0]
+		, [0, 69, 173]
+		, [255, 89, 0]
+		, [255, 255, 255]
+		, [255, 213, 0]
+		];
+
+	constructor() {
+		this.faces = [];
+		for (face = 0; face <= 6; ++face) {
+			//this.faces.add(3 * [3 * [face]]);
+			this.faces.add([[0, 1, 2], [3, 4, 5], [0, 2, 4]]);
+		}
+		print(this.faces);
+	}
+
+	function update(inputManager, events) {
+	}
+
+	function render() {
+		Graphics2D.Draw.fill(255, 255, 255);
+		// Top
+		oTop = [LEFT_X, MID_TOP_Y];
+		uTop = [MID_X, TOP_Y];
+		vTop = [MID_X, MID_Y];
+		this.drawFace(0, oTop, uTop, vTop);
+		this.drawGrid(oTop, uTop, vTop);
+		// Left grid
+		oLeft = [LEFT_X, MID_TOP_Y];
+		uLeft = [MID_X, MID_Y];
+		vLeft = [LEFT_X, MID_BOTTOM_Y];
+		this.drawFace(1, oLeft, uLeft, vLeft);
+		this.drawGrid(oLeft, uLeft, vLeft);
+		// Right grid
+		oRight = [MID_X, MID_Y];
+		uRight = [RIGHT_X, MID_TOP_Y];
+		vRight = [MID_X, BOTTOM_Y];
+		this.drawFace(2, oRight, uRight, vRight);
+		this.drawGrid(oRight, uRight, vRight);
+	}
+
+	function drawFace(face, o, u, v) {
+		u = [(u[0] - o[0]) / 3.0, (u[1] - o[1]) / 3.0];
+		v = [(v[0] - o[0]) / 3.0, (v[1] - o[1]) / 3.0];
+		for (i = 0; i < 3; ++i) {
+			for (j = 0; j < 3; ++j) {
+				color = MainScene.colors[this.faces[face][i][j]];
+				shadow =  1.0 - face * SHADOW;
+				Graphics2D.Draw.quad
+					( o[0] + i * u[0] + j * v[0], o[1] + i * u[1] + j * v[1]
+					, o[0] + (i + 1) * u[0] + j * v[0], o[1] + (i + 1) * u[1] + j * v[1]
+					, o[0] + (i + 1) * u[0] + (j + 1) * v[0], o[1] + (i + 1) * u[1] + (j + 1) * v[1]
+					, o[0] + i * u[0] + (j + 1) * v[0], o[1] + i * u[1] + (j + 1) * v[1]
+					, color[0] * shadow, color[1] * shadow, color[2] * shadow
+					);
+			}
+		}
+	}
+
+	function drawGrid(o, u, v) {
+		u = [(u[0] - o[0]) / 3.0, (u[1] - o[1]) / 3.0];
+		v = [(v[0] - o[0]) / 3.0, (v[1] - o[1]) / 3.0];
+		for (i = 0; i < 4; ++i) {
+			thickness = i % 3 == 0 ? 4 : 2;
+			Graphics2D.Draw.line
+				( o[0] + i * v[0], o[1] + i * v[1]
+				, o[0] + i * v[0] + 3 * u[0], o[1] + i * v[1] + 3 * u[1]
+				, thickness
+				, 0, 0, 0
+				);
+			Graphics2D.Draw.line
+				( o[0] + i * u[0], o[1] + i * u[1]
+				, o[0] + i * u[0] + 3 * v[0], o[1] + i * u[1] + 3 * v[1]
+				, thickness
+				, 0, 0, 0
+				);
+		}
+	}
+}
