@@ -22,6 +22,20 @@ const BOTTOM_Y = MID_Y + RADIUS;
 
 const SHADOW = 0.15;
 
+const SHUFFLE_COUNT = 20;
+
+const TOP_FACE = 0;
+const FRONT_LEFT_FACE = 1;
+const FRONT_RIGHT_FACE = 2;
+const BOTTOM_FACE = 3;
+const BACK_RIGHT_FACE = 4;
+const BACK_LEFT_FACE = 5;
+
+// By convention, all side faces (including back faces) proceed top to bottom, then left to right (looking at the face
+// head-on). The top face proceeds top-left to bottom-right, then bottom-left to top-right (looking at it from the player's
+// point of view). The bottom face mirrors the top face: top-left to bottom-right, then bottom-left to top-right (still
+// from the player's perspective).
+
 class MainScene : AbstractScene {
 	field faces;
 
@@ -35,15 +49,216 @@ class MainScene : AbstractScene {
 		];
 
 	constructor() {
+		this.reset();
+		this.shuffle();
+	}
+
+	function reset() {
 		this.faces = [];
 		for (face = 0; face <= 6; ++face) {
-			//this.faces.add(3 * [3 * [face]]);
-			this.faces.add([[0, 1, 2], [3, 4, 5], [0, 2, 4]]);
+			this.faces.add([]);
+			for (i = 0; i < 3; ++i) {
+				this.faces[face].add(3 * [face]);
+			}
 		}
-		print(this.faces);
+	}
+
+	function shuffle() {
+		for (i = 0; i < SHUFFLE_COUNT; ++i) {
+			switch (Random.randomInt(6)) {
+				case 0:
+					this.rotateTopLayer();
+					break;
+				case 1:
+					this.rotateFrontLeftLayer();
+					break;
+				case 2:
+					this.rotateFrontRightLayer();
+					break;
+				case 3:
+					// Rotate bottom layer.
+					//this.rotateCubeForward();
+					this.rotateFrontLeftLayer();
+					break;
+				case 4:
+					// Rotate back-left layer.
+					//this.rotateCubeRight();
+					this.rotateFrontLeftLayer();
+					break;
+				default:
+					// Rotate back-right layer.
+					//this.rotateCubeLeft();
+					this.rotateFrontRightLayer();
+					break;
+			}
+		}
 	}
 
 	function update(inputManager, events) {
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.ESCAPE)) {
+			this.reset();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.Q)) {
+			this.rotateFrontLeftLayer();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.W)) {
+			this.rotateTopLayer();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.E)) {
+			this.rotateFrontRightLayer();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.LEFT)) {
+			this.rotateCubeLeft();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.RIGHT)) {
+			this.rotateCubeRight();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.UP)) {
+			this.rotateCubeForward();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.DOWN)) {
+			this.rotateCubeBackward();
+		}
+		if (inputManager.isKeyPressedThisFrame(KeyboardKey.SPACE)) {
+			sum = 0;
+			for (face : this.faces) {
+				for (row : face) {
+					for (col : row) {
+						sum += col;
+					}
+				}
+			}
+			print(this.faces);
+			print("Checksum: " + sum);
+		}
+	}
+
+	// Creates a deep copy of the face at the given index. Useful for avoiding aliasing issues.
+	function copyFace(faceIdx) {
+		result = [];
+		face = this.faces[faceIdx];
+		for (i = 0; i < 3; ++i) {
+			result.add(face[i].clone());
+		}
+		return result;
+	}
+
+	// This rotates the squares on a face without affecting the adjacent squares on other faces.
+	function rotateFaceOnly(faceIdx) {
+		face = this.faces[faceIdx];
+		// Corners
+		t = face[0][0];
+		face[0][0] = face[0][2];
+		face[0][2] = face[2][2];
+		face[2][2] = face[2][0];
+		face[2][0] = t;
+		// Edges
+		t = face[0][1];
+		face[0][1] = face[1][2];
+		face[1][2] = face[2][1];
+		face[2][1] = face[1][0];
+		face[1][0] = t;
+	}
+
+	function rotateTopLayer() {
+		this.rotateFaceOnly(TOP_FACE);
+		// First corner
+		t = this.faces[FRONT_LEFT_FACE][0][0];
+		this.faces[FRONT_LEFT_FACE][0][0] = this.faces[FRONT_RIGHT_FACE][0][0];
+		this.faces[FRONT_RIGHT_FACE][0][0] = this.faces[BACK_RIGHT_FACE][0][0];
+		this.faces[BACK_RIGHT_FACE][0][0] = this.faces[BACK_LEFT_FACE][0][0];
+		this.faces[BACK_LEFT_FACE][0][0] = t;
+		// Edge
+		t = this.faces[FRONT_LEFT_FACE][1][0];
+		this.faces[FRONT_LEFT_FACE][1][0] = this.faces[FRONT_RIGHT_FACE][1][0];
+		this.faces[FRONT_RIGHT_FACE][1][0] = this.faces[BACK_RIGHT_FACE][1][0];
+		this.faces[BACK_RIGHT_FACE][1][0] = this.faces[BACK_LEFT_FACE][1][0];
+		this.faces[BACK_LEFT_FACE][1][0] = t;
+		// Second corner
+		t = this.faces[FRONT_LEFT_FACE][2][0];
+		this.faces[FRONT_LEFT_FACE][2][0] = this.faces[FRONT_RIGHT_FACE][2][0];
+		this.faces[FRONT_RIGHT_FACE][2][0] = this.faces[BACK_RIGHT_FACE][2][0];
+		this.faces[BACK_RIGHT_FACE][2][0] = this.faces[BACK_LEFT_FACE][2][0];
+		this.faces[BACK_LEFT_FACE][2][0] = t;
+	}
+
+	function rotateFrontLeftLayer() {
+		this.rotateFaceOnly(FRONT_LEFT_FACE);
+		// In this case, can just swap entire rows at a time.
+		t = this.faces[TOP_FACE][0].clone();
+		this.faces[TOP_FACE][0] = this.faces[BACK_LEFT_FACE][2].clone();
+		this.faces[BACK_LEFT_FACE][2] = this.faces[BOTTOM_FACE][0].clone();
+		this.faces[BOTTOM_FACE][0] = this.faces[FRONT_RIGHT_FACE][0].clone();
+		this.faces[FRONT_RIGHT_FACE][0] = t;
+	}
+
+	function rotateFrontRightLayer() {
+		this.rotateFaceOnly(FRONT_RIGHT_FACE);
+		// First corner
+		t = this.faces[TOP_FACE][0][2];
+		this.faces[TOP_FACE][0][2] = this.faces[FRONT_LEFT_FACE][2][2];
+		this.faces[FRONT_LEFT_FACE][2][2] = this.faces[BOTTOM_FACE][2][2];
+		this.faces[BOTTOM_FACE][2][2] = this.faces[BACK_RIGHT_FACE][0][0];
+		this.faces[BACK_RIGHT_FACE][0][0] = t;
+		// Edge
+		t = this.faces[TOP_FACE][1][2];
+		this.faces[TOP_FACE][1][2] = this.faces[FRONT_LEFT_FACE][2][1];
+		this.faces[FRONT_LEFT_FACE][2][1] = this.faces[BOTTOM_FACE][1][2];
+		this.faces[BOTTOM_FACE][1][2] = this.faces[BACK_RIGHT_FACE][0][1];
+		this.faces[BACK_RIGHT_FACE][0][1] = t;
+		// Second corner
+		t = this.faces[TOP_FACE][2][2];
+		this.faces[TOP_FACE][2][2] = this.faces[FRONT_LEFT_FACE][2][0];
+		this.faces[FRONT_LEFT_FACE][2][0] = this.faces[BOTTOM_FACE][0][2];
+		this.faces[BOTTOM_FACE][0][2] = this.faces[BACK_RIGHT_FACE][0][2];
+		this.faces[BACK_RIGHT_FACE][0][2] = t;
+	}
+
+	// Like a front-right layer CW rotate but for the whole cube.
+	function rotateCubeForward() {
+		this.rotateFaceOnly(FRONT_RIGHT_FACE);
+		this.rotateFaceOnly(BACK_LEFT_FACE);
+		// Swap faces clockwise and later rotate them to correct their orientation.
+		t = this.copyFace(TOP_FACE);
+		this.faces[TOP_FACE] = this.copyFace(FRONT_LEFT_FACE);
+		this.faces[FRONT_LEFT_FACE] = this.copyFace(BOTTOM_FACE);
+		this.faces[BOTTOM_FACE] = this.copyFace(BACK_RIGHT_FACE);
+		this.faces[BACK_RIGHT_FACE] = t;
+		// The new top and back-right faces have been effectively rotated CCW. Rotate CW to compensate.
+		this.rotateFaceOnly(TOP_FACE);
+		this.rotateFaceOnly(BACK_RIGHT_FACE);
+		// The new front-left and bottom faces have been rotated CW. Rotate CCW to compensate.
+		for (i = 0; i < 3; ++i) {
+			this.rotateFaceOnly(FRONT_LEFT_FACE);
+			this.rotateFaceOnly(BOTTOM_FACE);
+		}
+	}
+
+	// Like a front-right layer CCW rotate but for the whole cube.
+	function rotateCubeBackward() {
+		for (i = 0; i < 3; ++i) {
+			this.rotateCubeForward();
+		}
+	}
+
+	// Rotates the entire cube 90 degrees clockwise on the y-axis.
+	function rotateCubeLeft() {
+		this.rotateFaceOnly(TOP_FACE);
+		this.rotateFaceOnly(BOTTOM_FACE);
+		// Swap side faces clockwise. They're already in the correct orientation.
+		t = this.copyFace(FRONT_LEFT_FACE);
+		this.faces[FRONT_LEFT_FACE] = this.copyFace(FRONT_RIGHT_FACE);
+		this.faces[FRONT_RIGHT_FACE] = this.copyFace(BACK_RIGHT_FACE);
+		this.faces[BACK_RIGHT_FACE] = this.copyFace(BACK_LEFT_FACE);
+		this.faces[BACK_LEFT_FACE] = t;
+	}
+
+	// Rotates the entire cube 90 degrees counterclockwise on the y-axis.
+	function rotateCubeRight() {
+		// Unlike two wrongs, three lefts make a right.
+		for (i = 0; i < 3; ++i) {
+			this.rotateCubeLeft();
+		}
 	}
 
 	function render() {
@@ -52,19 +267,19 @@ class MainScene : AbstractScene {
 		oTop = [LEFT_X, MID_TOP_Y];
 		uTop = [MID_X, TOP_Y];
 		vTop = [MID_X, MID_Y];
-		this.drawFace(0, oTop, uTop, vTop);
+		this.drawFace(TOP_FACE, oTop, uTop, vTop);
 		this.drawGrid(oTop, uTop, vTop);
-		// Left grid
+		// Front left
 		oLeft = [LEFT_X, MID_TOP_Y];
 		uLeft = [MID_X, MID_Y];
 		vLeft = [LEFT_X, MID_BOTTOM_Y];
-		this.drawFace(1, oLeft, uLeft, vLeft);
+		this.drawFace(FRONT_LEFT_FACE, oLeft, uLeft, vLeft);
 		this.drawGrid(oLeft, uLeft, vLeft);
-		// Right grid
+		// Front right
 		oRight = [MID_X, MID_Y];
 		uRight = [RIGHT_X, MID_TOP_Y];
 		vRight = [MID_X, BOTTOM_Y];
-		this.drawFace(2, oRight, uRight, vRight);
+		this.drawFace(FRONT_RIGHT_FACE, oRight, uRight, vRight);
 		this.drawGrid(oRight, uRight, vRight);
 	}
 
