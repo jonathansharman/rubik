@@ -68,7 +68,43 @@ class Button {
 	}
 }
 
+function det(v1, v2) {
+	return v1[0] * v2[1] - v2[0] * v1[1];
+}
+
+// Adapted from https://stackoverflow.com/a/1218538/3217185.
+function parallelogramContainsPoint(p, q, r, a) {
+	pr = [r[0] - p[0], r[1] - p[1]];
+	pq = [q[0] - p[0], q[1] - p[1]];
+	pa = [a[0] - p[0], a[1] - p[1]];
+	dqr = det(pq, pr);
+	qTest = -det(pa, pq) / dqr;
+	rTest = det(pa, pr) / dqr;
+	return 0.0 <= qTest && qTest <= 1.0 && 0.0 <= rTest && rTest <= 1.0;
+}
+
 class MainScene : AbstractScene {
+	static field colors =
+		[ [0, 155, 72]
+		, [185, 0, 0]
+		, [0, 69, 173]
+		, [255, 89, 0]
+		, [255, 255, 255]
+		, [255, 213, 0]
+		];
+
+	static field oTop = [LEFT_X, MID_TOP_Y];
+	static field uTop = [MID_X, TOP_Y];
+	static field vTop = [MID_X, MID_Y];
+
+	static field oLeft = [LEFT_X, MID_TOP_Y];
+	static field uLeft = [MID_X, MID_Y];
+	static field vLeft = [LEFT_X, MID_BOTTOM_Y];
+
+	static field oRight = [MID_X, MID_Y];
+	static field uRight = [RIGHT_X, MID_TOP_Y];
+	static field vRight = [MID_X, BOTTOM_Y];
+
 	field faces;
 
 	field topLeftArrow = new Button(Images.get("top-left-arrow.png"), TOP_LEFT_ARROW_X, TOP_ARROWS_Y, [0.5, 0.5]);
@@ -78,15 +114,6 @@ class MainScene : AbstractScene {
 	field bottomLeftArrow = new Button(Images.get("bottom-left-arrow.png"), BOTTOM_LEFT_ARROW_X, BOTTOM_ARROWS_Y, [0.5, 0.5]);
 	field bottomRightArrow = new Button(Images.get("bottom-right-arrow.png"), BOTTOM_RIGHT_ARROW_X, BOTTOM_ARROWS_Y, [0.5, 0.5]);
 	field shuffleButton = new Button(Images.get("shuffle.png"), 0, Y_RES, [0.0, 1.0]);
-
-	static field colors =
-		[ [0, 155, 72]
-		, [185, 0, 0]
-		, [0, 69, 173]
-		, [255, 89, 0]
-		, [255, 255, 255]
-		, [255, 213, 0]
-		];
 
 	constructor() {
 		this.reset();
@@ -137,33 +164,54 @@ class MainScene : AbstractScene {
 		if (this.shuffleButton.isClicked(inputManager)) {
 			this.shuffle();
 		}
-		rotatedLayer = false;
+
+		clickedCube = false;
+		if (inputManager.didMouseClickHere(0, 0, X_RES, Y_RES)) {
+			mousePos = inputManager.getMousePosition();
+			if (parallelogramContainsPoint(MainScene.oTop, MainScene.uTop, MainScene.vTop, mousePos)) {
+				if (inputManager.isShiftPressed()) {
+					this.rotateTopLayerCCW();
+				} else {
+					this.rotateTopLayerCW();
+				}
+				clickedCube = true;
+			} else if (parallelogramContainsPoint(MainScene.oLeft, MainScene.uLeft, MainScene.vLeft, mousePos)) {
+				if (inputManager.isShiftPressed()) {
+					this.rotateFrontLeftLayerCCW();
+				} else {
+					this.rotateFrontLeftLayerCW();
+				}
+				clickedCube = true;
+			} else if (parallelogramContainsPoint(MainScene.oRight, MainScene.uRight, MainScene.vRight, mousePos)) {
+				if (inputManager.isShiftPressed()) {
+					this.rotateFrontRightLayerCCW();
+				} else {
+					this.rotateFrontRightLayerCW();
+				}
+				clickedCube = true;
+			}
+		}
+
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.Q)) {
 			this.rotateFrontLeftLayerCCW();
-			rotatedLayer = true;
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.A)) {
 			this.rotateFrontLeftLayerCW();
-			rotatedLayer = true;
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.W)) {
 			this.rotateTopLayerCW();
-			rotatedLayer = true;
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.S)) {
 			this.rotateTopLayerCCW();
-			rotatedLayer = true;
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.E)) {
 			this.rotateFrontRightLayerCW();
-			rotatedLayer = true;
 		}
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.D)) {
 			this.rotateFrontRightLayerCCW();
-			rotatedLayer = true;
 		}
 		// Because the buttons slightly overlap the cube, skip cube rotations if a cube click occurred.
-		if (!rotatedLayer) {
+		if (!clickedCube) {
 			if (this.topLeftArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.U)) {
 				this.rotateCubeTopLeft();
 			}
@@ -381,23 +429,14 @@ class MainScene : AbstractScene {
 		this.bottomRightArrow.draw();
 		this.shuffleButton.draw();
 		// Top
-		oTop = [LEFT_X, MID_TOP_Y];
-		uTop = [MID_X, TOP_Y];
-		vTop = [MID_X, MID_Y];
-		this.drawFace(TOP_FACE, oTop, uTop, vTop);
-		this.drawGrid(oTop, uTop, vTop);
+		this.drawFace(TOP_FACE, MainScene.oTop, MainScene.uTop, MainScene.vTop);
+		this.drawGrid(MainScene.oTop, MainScene.uTop, MainScene.vTop);
 		// Front left
-		oLeft = [LEFT_X, MID_TOP_Y];
-		uLeft = [MID_X, MID_Y];
-		vLeft = [LEFT_X, MID_BOTTOM_Y];
-		this.drawFace(FRONT_LEFT_FACE, oLeft, uLeft, vLeft);
-		this.drawGrid(oLeft, uLeft, vLeft);
+		this.drawFace(FRONT_LEFT_FACE, MainScene.oLeft, MainScene.uLeft, MainScene.vLeft);
+		this.drawGrid(MainScene.oLeft, MainScene.uLeft, MainScene.vLeft);
 		// Front right
-		oRight = [MID_X, MID_Y];
-		uRight = [RIGHT_X, MID_TOP_Y];
-		vRight = [MID_X, BOTTOM_Y];
-		this.drawFace(FRONT_RIGHT_FACE, oRight, uRight, vRight);
-		this.drawGrid(oRight, uRight, vRight);
+		this.drawFace(FRONT_RIGHT_FACE, MainScene.oRight, MainScene.uRight, MainScene.vRight);
+		this.drawGrid(MainScene.oRight, MainScene.uRight, MainScene.vRight);
 	}
 
 	function drawCentered(image, x, y) {
