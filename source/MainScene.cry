@@ -301,12 +301,15 @@ class MainScene : AbstractScene {
 
 	function rotateFrontLeftLayerCW() {
 		this.rotateFaceOnly(FRONT_LEFT_FACE);
-		// In this case, can just swap entire rows at a time.
+		// In this case, can swap entire rows at a time, reversing them if necessary.
 		t = this.faces[TOP_FACE][0].clone();
 		this.faces[TOP_FACE][0] = this.faces[BACK_LEFT_FACE][2].clone();
 		this.faces[BACK_LEFT_FACE][2] = this.faces[BOTTOM_FACE][0].clone();
 		this.faces[BOTTOM_FACE][0] = this.faces[FRONT_RIGHT_FACE][0].clone();
 		this.faces[FRONT_RIGHT_FACE][0] = t;
+		// The new front and bottom faces are in reverse order.
+		this.faces[TOP_FACE][0].reverse();
+		this.faces[BOTTOM_FACE][0].reverse();
 	}
 
 	function rotateFrontLeftLayerCCW() {
