@@ -83,6 +83,40 @@ function parallelogramContainsPoint(p, q, r, a) {
 	return 0.0 <= qTest && qTest <= 1.0 && 0.0 <= rTest && rTest <= 1.0;
 }
 
+function faceName(faceIdx) {
+	switch (faceIdx) {
+		case TOP_FACE:
+			return "Top";
+		case FRONT_LEFT_FACE:
+			return "Front-left";
+		case FRONT_RIGHT_FACE:
+			return "Front-right";
+		case BOTTOM_FACE:
+			return "Bottom";
+		case BACK_RIGHT_FACE:
+			return "Back-right";
+		case BACK_LEFT_FACE:
+			return "Back-left";
+	}
+}
+
+function colorName(colorIdx) {
+	switch (colorIdx) {
+		case 0:
+			return "g";
+		case 1:
+			return "r";
+		case 2:
+			return "b";
+		case 3:
+			return "o";
+		case 4:
+			return "w";
+		default:
+			return "y";
+	}
+}
+
 class MainScene : AbstractScene {
 	static field colors =
 		[ [0, 155, 72]
@@ -240,7 +274,19 @@ class MainScene : AbstractScene {
 					}
 				}
 			}
+			print("=============");
 			print("Checksum: " + sum);
+			for (faceIdx = 0; faceIdx < 6; ++faceIdx) {
+				face = this.faces[faceIdx];
+				print(faceName(faceIdx));
+				for (j = 0; j < 3; ++j) {
+					row = 4 * " ";
+					for (i = 0; i < 3; ++i) {
+						row += colorName(face[i][j]) + " ";
+					}
+					print(row);
+				}
+			}
 		}
 	}
 
@@ -255,7 +301,7 @@ class MainScene : AbstractScene {
 	}
 
 	// Rotates the squares on a face CW without affecting the adjacent squares on other faces.
-	function rotateFaceOnly(faceIdx) {
+	function rotateFaceCW(faceIdx) {
 		face = this.faces[faceIdx];
 		// Corners
 		t = face[0][0];
@@ -271,6 +317,13 @@ class MainScene : AbstractScene {
 		face[1][0] = t;
 	}
 
+	// Rotates the squares on a face CCW without affecting the adjacent squares on other faces.
+	function rotateFaceCCW(faceIdx) {
+		for (i = 0; i < 3; ++i) {
+			this.rotateFaceCCW(faceIdx);
+		}
+	}
+
 	// Flips the indices of the squares on a face.
 	function transposeFace(faceIdx) {
 		face = this.faces[faceIdx];
@@ -284,7 +337,7 @@ class MainScene : AbstractScene {
 	}
 
 	function rotateTopLayerCW() {
-		this.rotateFaceOnly(TOP_FACE);
+		this.rotateFaceCW(TOP_FACE);
 		// First corner
 		t = this.faces[FRONT_LEFT_FACE][0][0];
 		this.faces[FRONT_LEFT_FACE][0][0] = this.faces[FRONT_RIGHT_FACE][0][0];
@@ -312,7 +365,7 @@ class MainScene : AbstractScene {
 	}
 
 	function rotateFrontLeftLayerCW() {
-		this.rotateFaceOnly(FRONT_LEFT_FACE);
+		this.rotateFaceCW(FRONT_LEFT_FACE);
 		// In this case, can swap entire rows at a time, reversing them if necessary.
 		t = this.faces[TOP_FACE][0].clone();
 		this.faces[TOP_FACE][0] = this.faces[BACK_LEFT_FACE][2].clone();
@@ -331,7 +384,7 @@ class MainScene : AbstractScene {
 	}
 
 	function rotateFrontRightLayerCW() {
-		this.rotateFaceOnly(FRONT_RIGHT_FACE);
+		this.rotateFaceCW(FRONT_RIGHT_FACE);
 		// First corner
 		t = this.faces[TOP_FACE][0][2];
 		this.faces[TOP_FACE][0][2] = this.faces[FRONT_LEFT_FACE][2][2];
@@ -360,10 +413,8 @@ class MainScene : AbstractScene {
 
 	// Like a front-right layer CW rotate but for the whole cube.
 	function rotateCubeTopRight() {
-		this.rotateFaceOnly(FRONT_RIGHT_FACE);
-		for (i = 0; i < 3; ++i) {
-			this.rotateFaceOnly(BACK_LEFT_FACE);
-		}
+		this.rotateFaceCW(FRONT_RIGHT_FACE);
+		this.rotateFaceCCW(BACK_LEFT_FACE);
 		// Swap faces clockwise and later rotate them to correct their orientation.
 		t = this.copyFace(TOP_FACE);
 		this.faces[TOP_FACE] = this.copyFace(FRONT_LEFT_FACE);
@@ -371,11 +422,13 @@ class MainScene : AbstractScene {
 		this.faces[BOTTOM_FACE] = this.copyFace(BACK_RIGHT_FACE);
 		this.faces[BACK_RIGHT_FACE] = t;
 		// The new top and back-right faces have been effectively rotated CCW. Rotate CW to compensate.
-		this.rotateFaceOnly(TOP_FACE);
-		this.rotateFaceOnly(BACK_RIGHT_FACE);
-		// The new front-left and bottom faces have been transposed.
+		this.rotateFaceCW(TOP_FACE);
+		this.rotateFaceCW(BACK_RIGHT_FACE);
+		// The new front-left and bottom faces have been flipped and transposed. Traspose and flip.
 		this.transposeFace(FRONT_LEFT_FACE);
+		this.faces[FRONT_LEFT_FACE].reverse();
 		this.transposeFace(BOTTOM_FACE);
+		this.faces[BOTTOM_FACE].reverse();
 	}
 
 	// Like a back-left layer CW rotate but for the whole cube.
@@ -387,8 +440,8 @@ class MainScene : AbstractScene {
 
 	// Rotates the entire cube 90 degrees clockwise on the y-axis.
 	function rotateCubeLeft() {
-		this.rotateFaceOnly(TOP_FACE);
-		this.rotateFaceOnly(BOTTOM_FACE);
+		this.rotateFaceCW(TOP_FACE);
+		this.rotateFaceCW(BOTTOM_FACE);
 		// Swap side faces clockwise. They're already in the correct orientation.
 		t = this.copyFace(FRONT_LEFT_FACE);
 		this.faces[FRONT_LEFT_FACE] = this.copyFace(FRONT_RIGHT_FACE);
@@ -407,10 +460,8 @@ class MainScene : AbstractScene {
 
 	// Like a back-right layer CW rotate but for the whole cube.
 	function rotateCubeTopLeft() {
-		for (i = 0; i < 3; ++i) {
-			this.rotateFaceOnly(FRONT_LEFT_FACE);
-		}
-		this.rotateFaceOnly(BACK_RIGHT_FACE);
+		this.rotateFaceCCW(FRONT_LEFT_FACE);
+		this.rotateFaceCW(BACK_RIGHT_FACE);
 		// Swap faces clockwise and later rotate them to correct their orientation.
 		t = this.copyFace(TOP_FACE);
 		this.faces[TOP_FACE] = this.copyFace(FRONT_RIGHT_FACE);
@@ -419,8 +470,8 @@ class MainScene : AbstractScene {
 		this.faces[BACK_LEFT_FACE] = t;
 		// The new back-left and front-right faces have been effectively rotated 180 degrees. Compensate.
 		for (i = 0; i < 2; ++i) {
-			this.rotateFaceOnly(BACK_LEFT_FACE);
-			this.rotateFaceOnly(FRONT_RIGHT_FACE);
+			this.rotateFaceCW(BACK_LEFT_FACE);
+			this.rotateFaceCW(FRONT_RIGHT_FACE);
 		}
 	}
 
