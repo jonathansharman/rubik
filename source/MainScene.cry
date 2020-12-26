@@ -320,7 +320,7 @@ class MainScene : AbstractScene {
 	// Rotates the squares on a face CCW without affecting the adjacent squares on other faces.
 	function rotateFaceCCW(faceIdx) {
 		for (i = 0; i < 3; ++i) {
-			this.rotateFaceCCW(faceIdx);
+			this.rotateFaceCW(faceIdx);
 		}
 	}
 
