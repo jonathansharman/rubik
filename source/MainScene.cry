@@ -153,6 +153,15 @@ class MainScene : AbstractScene {
 		this.reset();
 	}
 
+	// Does a few simple checks and warns if the current configuration is detected to be impossible.
+	function validate() {
+		top = this.faces[TOP_FACE];
+		frontLeft = this.faces[FRONT_LEFT_FACE];
+		if (top[0][0] == frontLeft[0][0] || top[0][1] == frontLeft[1][0] || top[0][2] == frontLeft[2][0]) {
+			print("WARNING: Invalid cube state");
+		}
+	}
+
 	function reset() {
 		this.faces = [];
 		for (face = 0; face <= 6; ++face) {
@@ -191,6 +200,7 @@ class MainScene : AbstractScene {
 					this.rotateFrontRightLayerCW();
 					break;
 			}
+			this.validate();
 		}
 	}
 
@@ -429,6 +439,7 @@ class MainScene : AbstractScene {
 		this.faces[FRONT_LEFT_FACE] = this.copyFace(BOTTOM_FACE);
 		this.faces[BOTTOM_FACE] = this.copyFace(BACK_RIGHT_FACE);
 		this.faces[BACK_RIGHT_FACE] = t;
+		// Reorient faces to account to correct for implicit reorientations.
 		// The new top and back-right faces have been effectively rotated CCW. Rotate CW to compensate.
 		this.rotateFaceCW(TOP_FACE);
 		this.rotateFaceCW(BACK_RIGHT_FACE);
@@ -441,9 +452,6 @@ class MainScene : AbstractScene {
 		for (row : this.faces[BOTTOM_FACE]) {
 			row.reverse();
 		}
-		// The new bottom's face also has its rows in reverse order.
-		this.faces[BOTTOM_FACE].reverse();
-		this.faces[BOTTOM_FACE].reverse();
 		// The new front-left is STILL rotated 180, so rotate again...
 		for (i = 0; i < 2; ++i) {
 			this.rotateFaceCW(FRONT_LEFT_FACE);
