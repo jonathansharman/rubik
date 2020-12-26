@@ -148,9 +148,11 @@ class MainScene : AbstractScene {
 	field bottomLeftArrow = new Button(Images.get("bottom-left-arrow.png"), BOTTOM_LEFT_ARROW_X, BOTTOM_ARROWS_Y, [0.5, 0.5]);
 	field bottomRightArrow = new Button(Images.get("bottom-right-arrow.png"), BOTTOM_RIGHT_ARROW_X, BOTTOM_ARROWS_Y, [0.5, 0.5]);
 	field shuffleButton = new Button(Images.get("shuffle.png"), 0, Y_RES, [0.0, 1.0]);
+	field resetButton = new Button(Images.get("reset.png"), X_RES, Y_RES, [1.0, 1.0]);
 
 	constructor() {
 		this.reset();
+		this.shuffle();
 	}
 
 	// Does a few simple checks and warns if the current configuration is detected to be impossible.
@@ -206,7 +208,7 @@ class MainScene : AbstractScene {
 
 	function update(inputManager, events) {
 		// Reset.
-		if (inputManager.isKeyPressed(KeyboardKey.ESCAPE)) {
+		if (this.resetButton.isClicked(inputManager) || inputManager.isKeyPressed(KeyboardKey.ESCAPE)) {
 			this.reset();
 			return;
 		}
@@ -521,6 +523,7 @@ class MainScene : AbstractScene {
 		this.bottomLeftArrow.draw();
 		this.bottomRightArrow.draw();
 		this.shuffleButton.draw();
+		this.resetButton.draw();
 		// Top
 		this.drawFace(TOP_FACE, MainScene.oTop, MainScene.uTop, MainScene.vTop);
 		this.drawGrid(MainScene.oTop, MainScene.uTop, MainScene.vTop);
