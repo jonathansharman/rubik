@@ -254,7 +254,7 @@ class MainScene : AbstractScene {
 		return result;
 	}
 
-	// This rotates the squares on a face without affecting the adjacent squares on other faces.
+	// Rotates the squares on a face CW without affecting the adjacent squares on other faces.
 	function rotateFaceOnly(faceIdx) {
 		face = this.faces[faceIdx];
 		// Corners
@@ -269,6 +269,18 @@ class MainScene : AbstractScene {
 		face[1][2] = face[2][1];
 		face[2][1] = face[1][0];
 		face[1][0] = t;
+	}
+
+	// Flips the indices of the squares on a face.
+	function transposeFace(faceIdx) {
+		face = this.faces[faceIdx];
+		for (i = 1; i < 3; ++i) {
+			for (j = 0; j < i; ++j) {
+				t = face[i][j];
+				face[i][j] = face[j][i];
+				face[j][i] = t;
+			}
+		}
 	}
 
 	function rotateTopLayerCW() {
@@ -361,11 +373,9 @@ class MainScene : AbstractScene {
 		// The new top and back-right faces have been effectively rotated CCW. Rotate CW to compensate.
 		this.rotateFaceOnly(TOP_FACE);
 		this.rotateFaceOnly(BACK_RIGHT_FACE);
-		// The new front-left and bottom faces have been rotated CW. Rotate CCW to compensate.
-		for (i = 0; i < 3; ++i) {
-			this.rotateFaceOnly(FRONT_LEFT_FACE);
-			this.rotateFaceOnly(BOTTOM_FACE);
-		}
+		// The new front-left and bottom faces have been transposed.
+		this.transposeFace(FRONT_LEFT_FACE);
+		this.transposeFace(BOTTOM_FACE);
 	}
 
 	// Like a back-left layer CW rotate but for the whole cube.
