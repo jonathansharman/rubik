@@ -437,6 +437,22 @@ class MainScene : AbstractScene {
 		this.faces[FRONT_LEFT_FACE].reverse();
 		this.transposeFace(BOTTOM_FACE);
 		this.faces[BOTTOM_FACE].reverse();
+		// The new bottom's rows are also individually reversed.
+		for (row : this.faces[BOTTOM_FACE]) {
+			row.reverse();
+		}
+		// The new bottom's face also has its rows in reverse order.
+		this.faces[BOTTOM_FACE].reverse();
+		this.faces[BOTTOM_FACE].reverse();
+		// The new front-left is STILL rotated 180, so rotate again...
+		for (i = 0; i < 2; ++i) {
+			this.rotateFaceCW(FRONT_LEFT_FACE);
+		}
+		// THE NEW FRONT-LEFT IS UPSIDE-DOWN, SO FLIP ITS ROWS.
+		for (row : this.faces[FRONT_LEFT_FACE]) {
+			row.reverse();
+		}
+		
 	}
 
 	// Like a back-left layer CW rotate but for the whole cube.
