@@ -195,10 +195,16 @@ class MainScene : AbstractScene {
 	}
 
 	function update(inputManager, events) {
+		// Reset.
+		if (inputManager.isKeyPressed(KeyboardKey.ESCAPE)) {
+			this.reset();
+			return;
+		}
+		// Shuffle.
 		if (this.shuffleButton.isClicked(inputManager)) {
 			this.shuffle();
 		}
-
+		// Rotate layers by mouse.
 		clickedCube = false;
 		if (inputManager.didMouseClickHere(0, 0, X_RES, Y_RES)) {
 			mousePos = inputManager.getMousePosition();
@@ -225,7 +231,7 @@ class MainScene : AbstractScene {
 				clickedCube = true;
 			}
 		}
-
+		// Rotate layers by keyboard.
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.Q)) {
 			this.rotateFrontLeftLayerCCW();
 		}
@@ -244,6 +250,7 @@ class MainScene : AbstractScene {
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.D)) {
 			this.rotateFrontRightLayerCCW();
 		}
+		// Rotate the cube.
 		// Because the buttons slightly overlap the cube, skip cube rotations if a cube click occurred.
 		if (!clickedCube) {
 			if (this.topLeftArrow.isClicked(inputManager) || inputManager.isKeyPressedThisFrame(KeyboardKey.U)) {
@@ -265,6 +272,7 @@ class MainScene : AbstractScene {
 				this.rotateCubeRight();
 			}
 		}
+		// Debug printing.
 		if (inputManager.isKeyPressedThisFrame(KeyboardKey.SPACE)) {
 			sum = 0;
 			for (face : this.faces) {
