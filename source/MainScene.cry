@@ -431,6 +431,7 @@ class MainScene : AbstractScene {
 
 	// Like a front-right layer CW rotate but for the whole cube.
 	function rotateCubeTopRight() {
+		// Rotate the front-right and back faces appropriately.
 		this.rotateFaceCW(FRONT_RIGHT_FACE);
 		this.rotateFaceCCW(BACK_LEFT_FACE);
 		// Swap faces clockwise and later rotate them to correct their orientation.
@@ -440,27 +441,16 @@ class MainScene : AbstractScene {
 		this.faces[BOTTOM_FACE] = this.copyFace(BACK_RIGHT_FACE);
 		this.faces[BACK_RIGHT_FACE] = t;
 		// Reorient faces to account to correct for implicit reorientations.
-		// The new top and back-right faces have been effectively rotated CCW. Rotate CW to compensate.
+		// The new top and back-right faces have been effectively rotated CCW.
 		this.rotateFaceCW(TOP_FACE);
 		this.rotateFaceCW(BACK_RIGHT_FACE);
-		// The new front-left and bottom faces have been flipped and transposed. Traspose and flip.
+		// The new front-left face has been transposed.
 		this.transposeFace(FRONT_LEFT_FACE);
-		this.faces[FRONT_LEFT_FACE].reverse();
-		this.transposeFace(BOTTOM_FACE);
-		this.faces[BOTTOM_FACE].reverse();
-		// The new bottom's rows are also individually reversed.
-		for (row : this.faces[BOTTOM_FACE]) {
-			row.reverse();
-		}
-		// The new front-left is STILL rotated 180, so rotate again...
+		// The new bottom face has been rotated 180 degrees and transposed.
 		for (i = 0; i < 2; ++i) {
-			this.rotateFaceCW(FRONT_LEFT_FACE);
+			this.rotateFaceCW(BOTTOM_FACE);
 		}
-		// THE NEW FRONT-LEFT IS UPSIDE-DOWN, SO FLIP ITS ROWS.
-		for (row : this.faces[FRONT_LEFT_FACE]) {
-			row.reverse();
-		}
-		
+		this.transposeFace(BOTTOM_FACE);
 	}
 
 	// Like a back-left layer CW rotate but for the whole cube.
@@ -492,6 +482,7 @@ class MainScene : AbstractScene {
 
 	// Like a back-right layer CW rotate but for the whole cube.
 	function rotateCubeTopLeft() {
+		// Rotate the front-left and back-right faces appropriately.
 		this.rotateFaceCCW(FRONT_LEFT_FACE);
 		this.rotateFaceCW(BACK_RIGHT_FACE);
 		// Swap faces clockwise and later rotate them to correct their orientation.
