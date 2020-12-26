@@ -434,7 +434,7 @@ class MainScene : AbstractScene {
 		// Rotate the front-right and back faces appropriately.
 		this.rotateFaceCW(FRONT_RIGHT_FACE);
 		this.rotateFaceCCW(BACK_LEFT_FACE);
-		// Swap faces clockwise and later rotate them to correct their orientation.
+		// Swap faces clockwise.
 		t = this.copyFace(TOP_FACE);
 		this.faces[TOP_FACE] = this.copyFace(FRONT_LEFT_FACE);
 		this.faces[FRONT_LEFT_FACE] = this.copyFace(BOTTOM_FACE);
@@ -485,16 +485,22 @@ class MainScene : AbstractScene {
 		// Rotate the front-left and back-right faces appropriately.
 		this.rotateFaceCCW(FRONT_LEFT_FACE);
 		this.rotateFaceCW(BACK_RIGHT_FACE);
-		// Swap faces clockwise and later rotate them to correct their orientation.
+		// Swap faces clockwise.
 		t = this.copyFace(TOP_FACE);
 		this.faces[TOP_FACE] = this.copyFace(FRONT_RIGHT_FACE);
 		this.faces[FRONT_RIGHT_FACE] = this.copyFace(BOTTOM_FACE);
 		this.faces[BOTTOM_FACE] = this.copyFace(BACK_LEFT_FACE);
 		this.faces[BACK_LEFT_FACE] = t;
-		// The new back-left and front-right faces have been effectively rotated 180 degrees. Compensate.
+		// Reorient faces to account to correct for implicit reorientations.
+		// The new bottom face has had the order of its rows reversed.
+		this.faces[BOTTOM_FACE].reverse();
+		// The new back-left face has been rotated 180 degrees.
 		for (i = 0; i < 2; ++i) {
 			this.rotateFaceCW(BACK_LEFT_FACE);
-			this.rotateFaceCW(FRONT_RIGHT_FACE);
+		}
+		// The new front-right face has had each of its rows reversed.
+		for (row : this.faces[FRONT_RIGHT_FACE]) {
+			row.reverse();
 		}
 	}
 
